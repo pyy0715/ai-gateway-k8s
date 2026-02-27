@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-smol
+  namespace: default
+  labels:
+    app: vllm-smol
+spec:
+  selector:
+    app: vllm-smol
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+  clusterIP: None # Headless for InferencePool
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vllm-smol
+  namespace: default
+  labels:
+    app: vllm-smol
+spec:
+  serviceName: vllm-smol
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vllm-smol
+  template:
+    metadata:
+      labels:
+        app: vllm-smol
+    spec:
+      volumes:
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: "1Gi"
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              vllm serve HuggingFaceTB/SmolLM2-1.7B-Instruct \
+                --host 0.0.0.0 \
+                --port 8000 \
+                --device cpu \
+                --dtype auto \
+                --max-model-len 4096
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "4"
+            limits:
+              memory: "12Gi"
+              cpu: "8"
+          volumeMounts:
+            - name: model-cache
+              mountPath: /root/.cache/huggingface
+            - name: shm
+              mountPath: /dev/shm
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 120
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 180
+            periodSeconds: 30
+  volumeClaimTemplates:
+    - metadata:
+        name: model-cache
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 20Gi
