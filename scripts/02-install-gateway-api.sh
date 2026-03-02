@@ -4,11 +4,12 @@ set -e
 echo "=== Installing Gateway API CRDs ==="
 echo ""
 
-# Gateway API v1.2.0 standard CRDs
-GATEWAY_API_VERSION="v1.2.0"
+# AI Gateway v0.5.x requires Gateway API v1.4.x
+# https://aigateway.envoyproxy.io/docs/compatibility
+GATEWAY_API_VERSION="v1.4.1"
 
 echo "Installing Gateway API CRDs (version: $GATEWAY_API_VERSION)..."
-kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
+kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
 
 echo ""
 echo "Waiting for CRDs to be established..."

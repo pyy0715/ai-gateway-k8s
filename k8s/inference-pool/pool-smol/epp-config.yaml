@@ -1,5 +1,3 @@
-# EPP 스케줄링 플러그인 설정 - SmolLM Pool
-
 apiVersion: v1
 kind: ConfigMap
 metadata:

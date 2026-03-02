@@ -1,5 +1,3 @@
-# Endpoint Picker (EPP) Deployment - SmolLM Pool
-
 apiVersion: v1
 kind: Service
 metadata:
@@ -9,10 +7,10 @@ spec:
   selector:
     app: vllm-smol-epp
   ports:
-  - protocol: TCP
-    port: 9002
-    targetPort: 9002
-    appProtocol: http2
+    - protocol: TCP
+      port: 9002
+      targetPort: 9002
+      appProtocol: http2
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -35,47 +33,47 @@ spec:
       serviceAccountName: vllm-smol-epp
       terminationGracePeriodSeconds: 130
       containers:
-      - name: epp
-        image: registry.k8s.io/gateway-api-inference-extension/epp:v1.0.1
-        imagePullPolicy: IfNotPresent
-        args:
-        - --pool-name=vllm-smol
-        - --pool-namespace=default
-        - --v=4
-        - --zap-encoder=json
-        - --grpc-port=9002
-        - --grpc-health-port=9003
-        - --config-file=/config/default-plugins.yaml
-        ports:
-        - containerPort: 9002
-          name: grpc
-        - containerPort: 9003
-          name: grpc-health
-        - containerPort: 9090
-          name: metrics
-        livenessProbe:
-          grpc:
-            port: 9003
-            service: inference-extension
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        readinessProbe:
-          grpc:
-            port: 9003
-            service: inference-extension
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        volumeMounts:
-        - name: plugins-config-volume
-          mountPath: /config
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "100m"
-          limits:
-            memory: "256Mi"
-            cpu: "500m"
+        - name: epp
+          image: registry.k8s.io/gateway-api-inference-extension/epp:v1.3.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - --pool-name=vllm-smol
+            - --pool-namespace=default
+            - --v=4
+            - --zap-encoder=json
+            - --grpc-port=9002
+            - --grpc-health-port=9003
+            - --config-file=/config/default-plugins.yaml
+          ports:
+            - containerPort: 9002
+              name: grpc
+            - containerPort: 9003
+              name: grpc-health
+            - containerPort: 9090
+              name: metrics
+          livenessProbe:
+            grpc:
+              port: 9003
+              service: inference-extension
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            grpc:
+              port: 9003
+              service: inference-extension
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: plugins-config-volume
+              mountPath: /config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
       volumes:
-      - name: plugins-config-volume
-        configMap:
-          name: plugins-config-smol
+        - name: plugins-config-volume
+          configMap:
+            name: plugins-config-smol

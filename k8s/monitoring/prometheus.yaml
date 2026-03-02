@@ -1,7 +1,10 @@
-# Prometheus Deployment for EPP Smart Routing Monitoring
+# Unified Prometheus Deployment for AI Gateway Monitoring
 #
-# NOTE: vLLM 메트릭은 메인 서버 포트(8000)의 /metrics 엔드포인트에서 노출됨
-# 별도의 메트릭 포트가 없음
+# Collects metrics from:
+# - vLLM (포트 8000의 /metrics)
+# - EPP (포트 9090)
+# - Envoy Proxy (포트 19001)
+# - Envoy Gateway Controller (포트 19000)
 
 apiVersion: v1
 kind: ConfigMap
@@ -15,6 +18,10 @@ data:
       evaluation_interval: 15s
 
     scrape_configs:
+      # ============================================
+      # AI Inference Layer (vLLM + EPP)
+      # ============================================
+
       # vLLM 메트릭 (메인 포트 8000의 /metrics)
       - job_name: 'vllm-metrics'
         kubernetes_sd_configs:
@@ -47,6 +54,45 @@ data:
             target_label: pod
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
+
+      # ============================================
+      # Envoy Gateway Layer (Data Plane + Control Plane)
+      # ============================================
+
+      # Envoy Proxy 메트릭 (데이터 플레인, 포트 19001)
+      - job_name: 'envoy-proxy'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - envoy-gateway-system
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_gateway_envoyproxy_io_owning_gateway_namespace]
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            replacement: ${1}:19001
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_label_gateway_envoyproxy_io_owning_gateway_name]
+            target_label: gateway_name
+
+      # Envoy Gateway Controller 메트릭 (컨트롤 플레인, 포트 19000)
+      - job_name: 'envoy-gateway'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - envoy-gateway-system
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            regex: envoy-gateway
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_ip]
+            replacement: ${1}:19000
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
 ---
 apiVersion: v1
 kind: ServiceAccount

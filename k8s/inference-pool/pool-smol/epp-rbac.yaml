@@ -1,5 +1,3 @@
-# EPP RBAC - SmolLM Pool
-
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -12,15 +10,12 @@ metadata:
   name: pod-read-smol
   namespace: default
 rules:
-- apiGroups: ["inference.networking.x-k8s.io"]
-  resources: ["inferenceobjectives", "inferencepools"]
-  verbs: ["get", "watch", "list"]
-- apiGroups: ["inference.networking.k8s.io"]
-  resources: ["inferencepools"]
-  verbs: ["get", "watch", "list"]
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "watch", "list"]
+  - apiGroups: ["inference.networking.k8s.io"]
+    resources: ["inferencepools"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "watch", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -28,9 +23,9 @@ metadata:
   name: pod-read-binding-smol
   namespace: default
 subjects:
-- kind: ServiceAccount
-  name: vllm-smol-epp
-  namespace: default
+  - kind: ServiceAccount
+    name: vllm-smol-epp
+    namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -41,21 +36,21 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: auth-reviewer-smol
 rules:
-- apiGroups: ["authentication.k8s.io"]
-  resources: ["tokenreviews"]
-  verbs: ["create"]
-- apiGroups: ["authorization.k8s.io"]
-  resources: ["subjectaccessreviews"]
-  verbs: ["create"]
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]
+  - apiGroups: ["authorization.k8s.io"]
+    resources: ["subjectaccessreviews"]
+    verbs: ["create"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: auth-reviewer-binding-smol
 subjects:
-- kind: ServiceAccount
-  name: vllm-smol-epp
-  namespace: default
+  - kind: ServiceAccount
+    name: vllm-smol-epp
+    namespace: default
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
