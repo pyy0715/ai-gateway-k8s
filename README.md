@@ -7,7 +7,6 @@ Gateway API Inference Extension의 스마트 라우팅을 테스트하는 환경
 | 컴포넌트 | 이미지 | 모델 |
 |---------|--------|------|
 | Backend (Qwen) | `llm-d-inference-sim` | Qwen3-0.6B |
-| Backend (SmolLM) | `llm-d-inference-sim` | SmolLM2-1.7B |
 | EPP | `epp:v1.3.1` | - |
 | Envoy Gateway | `v1.6.3` | - |
 

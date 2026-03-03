@@ -37,6 +37,8 @@ data:
             target_label: pod
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_label_speed]
+            target_label: speed
         metrics_path: /metrics
 
       # EPP 메트릭 (포트 9090) - Bearer 토큰 인증 필요
