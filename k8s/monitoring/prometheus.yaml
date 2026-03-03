@@ -39,7 +39,7 @@ data:
             target_label: namespace
         metrics_path: /metrics
 
-      # EPP 메트릭 (포트 9090)
+      # EPP 메트릭 (포트 9090) - Bearer 토큰 인증 필요
       - job_name: 'epp-metrics'
         kubernetes_sd_configs:
           - role: pod
@@ -54,6 +54,7 @@ data:
             target_label: pod
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
 
       # ============================================
       # Envoy Gateway Layer (Data Plane + Control Plane)
@@ -108,6 +109,8 @@ rules:
   - apiGroups: [""]
     resources: ["pods", "services", "endpoints"]
     verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -196,10 +199,11 @@ metadata:
   labels:
     app: prometheus
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - port: 9090
       targetPort: 9090
+      nodePort: 30090
       protocol: TCP
       name: http
   selector:

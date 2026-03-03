@@ -20,17 +20,6 @@ spec:
           kind: InferencePool
           name: vllm-qwen
 
-    # HuggingFaceTB/SmolLM2-1.7B-Instruct
-    - matches:
-        - headers:
-            - type: Exact
-              name: x-ai-eg-model
-              value: HuggingFaceTB/SmolLM2-1.7B-Instruct
-      backendRefs:
-        - group: inference.networking.k8s.io
-          kind: InferencePool
-          name: vllm-smol
-
     # Default
     - backendRefs:
         - group: inference.networking.k8s.io

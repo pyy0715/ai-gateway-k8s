@@ -15,7 +15,7 @@ rules:
     resources: ["inferencepools"]
     verbs: ["get", "watch", "list"]
   - apiGroups: ["inference.networking.x-k8s.io"]
-    resources: ["inferenceobjectives"]
+    resources: ["inferenceobjectives", "inferencemodelrewrites"]
     verbs: ["get", "watch", "list"]
   - apiGroups: [""]
     resources: ["pods"]

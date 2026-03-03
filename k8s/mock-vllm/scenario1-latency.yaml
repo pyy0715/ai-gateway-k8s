@@ -1,0 +1,127 @@
+# Scenario 1: Latency-based routing
+# TTFT 차이로 인해 slow pod에 queue가 쌓이면 EPP가 fast pod를 선호
+# EPP가 보는 메트릭: num_requests_waiting, kv_cache_usage_perc
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-mock-latency-slow
+  namespace: default
+  labels:
+    app: vllm-qwen        # InferencePool selector: matchLabels.app=vllm-qwen
+    scenario: latency
+    speed: slow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-qwen
+      scenario: latency
+      speed: slow
+  template:
+    metadata:
+      labels:
+        app: vllm-qwen
+        scenario: latency
+        speed: slow
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: vllm-mock
+          image: mock-vllm:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MOCK_VLLM_MODEL_NAME
+              value: "Qwen/Qwen3-0.6B"   # InferenceObjective의 모델명과 일치
+            - name: MOCK_VLLM_TTFT_BASE_MS
+              value: "500"    # 느림 → 요청을 오래 붙잡음 → queue 누적
+            - name: MOCK_VLLM_ITL_BASE_MS
+              value: "100"
+            - name: MOCK_VLLM_KV_CACHE_BASE
+              value: "0.1"
+            - name: MOCK_VLLM_MAX_CONCURRENT
+              value: "3"      # 낮게 설정해 빠르게 포화
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-mock-latency-fast
+  namespace: default
+  labels:
+    app: vllm-qwen
+    scenario: latency
+    speed: fast
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-qwen
+      scenario: latency
+      speed: fast
+  template:
+    metadata:
+      labels:
+        app: vllm-qwen
+        scenario: latency
+        speed: fast
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: vllm-mock
+          image: mock-vllm:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MOCK_VLLM_MODEL_NAME
+              value: "Qwen/Qwen3-0.6B"
+            - name: MOCK_VLLM_TTFT_BASE_MS
+              value: "50"     # 빠름 → 요청을 빨리 처리 → queue 낮음
+            - name: MOCK_VLLM_ITL_BASE_MS
+              value: "20"
+            - name: MOCK_VLLM_KV_CACHE_BASE
+              value: "0.1"
+            - name: MOCK_VLLM_MAX_CONCURRENT
+              value: "10"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 5

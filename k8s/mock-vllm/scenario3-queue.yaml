@@ -1,0 +1,127 @@
+# Scenario 3: Queue-based routing
+# TTFT 동일, MAX_CONCURRENT만 다르게 → 순수하게 queue depth 차이만으로 EPP 라우팅 검증
+# EPP가 보는 메트릭: vllm:num_requests_waiting
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-mock-queue-slow
+  namespace: default
+  labels:
+    app: vllm-qwen
+    scenario: queue
+    speed: slow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-qwen
+      scenario: queue
+      speed: slow
+  template:
+    metadata:
+      labels:
+        app: vllm-qwen
+        scenario: queue
+        speed: slow
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: vllm-mock
+          image: mock-vllm:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MOCK_VLLM_MODEL_NAME
+              value: "Qwen/Qwen3-0.6B"
+            - name: MOCK_VLLM_TTFT_BASE_MS
+              value: "200"   # fast와 동일
+            - name: MOCK_VLLM_ITL_BASE_MS
+              value: "50"    # fast와 동일
+            - name: MOCK_VLLM_KV_CACHE_BASE
+              value: "0.1"
+            - name: MOCK_VLLM_MAX_CONCURRENT
+              value: "2"     # 동시 2개만 → 금방 queue 참
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-mock-queue-fast
+  namespace: default
+  labels:
+    app: vllm-qwen
+    scenario: queue
+    speed: fast
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-qwen
+      scenario: queue
+      speed: fast
+  template:
+    metadata:
+      labels:
+        app: vllm-qwen
+        scenario: queue
+        speed: fast
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: vllm-mock
+          image: mock-vllm:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MOCK_VLLM_MODEL_NAME
+              value: "Qwen/Qwen3-0.6B"
+            - name: MOCK_VLLM_TTFT_BASE_MS
+              value: "200"   # slow와 동일
+            - name: MOCK_VLLM_ITL_BASE_MS
+              value: "50"    # slow와 동일
+            - name: MOCK_VLLM_KV_CACHE_BASE
+              value: "0.1"
+            - name: MOCK_VLLM_MAX_CONCURRENT
+              value: "10"    # 여유 있음 → queue 안 참
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 5
