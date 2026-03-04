@@ -81,7 +81,7 @@ kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=grafana -n mon
 # Deploy custom dashboards
 echo ""
 echo "Deploying vLLM/EPP dashboards..."
-kubectl apply -f "$PROJECT_DIR/k8s/monitoring/dashboards.yaml"
+kubectl apply -f "$PROJECT_DIR/k8s/monitoring/vllm-dashboard.yaml"
 
 # Restart Grafana to load dashboards
 kubectl rollout restart deployment/kube-prometheus-stack-grafana -n monitoring
