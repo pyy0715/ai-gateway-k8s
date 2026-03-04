@@ -1,0 +1,281 @@
+# vLLM Grafana Dashboard
+# Source: https://docs.vllm.ai/en/latest/examples/online_serving/dashboards/
+# Automatically loaded by kube-prometheus-stack Grafana sidecar
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-vllm
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  # Performance Statistics - E2E Latency, TTFT, ITL, TPS
+  performance-statistics.json: |
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+          "id": 9,
+          "panels": [],
+          "title": "E2E Latency",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Latency",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 18,
+                "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "showPoints": "auto",
+                "spanNulls": true,
+                "stacking": {"group": "A", "mode": "none"},
+                "thresholdsStyle": {"mode": "off"}
+              },
+              "decimals": 2,
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 1},
+          "id": 1,
+          "options": {
+            "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "single", "sort": "none"}
+          },
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+              "expr": "rate(vllm:e2e_request_latency_seconds_sum[$__interval]) / rate(vllm:e2e_request_latency_seconds_count[$__interval])",
+              "legendFormat": "E2E Latency",
+              "refId": "A"
+            }
+          ],
+          "title": "E2E Latency Over Time",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "displayName": "P99", "unit": "s"},
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
+          "id": 5,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [
+            {"expr": "histogram_quantile(0.99, sum by(le) (rate(vllm:e2e_request_latency_seconds_bucket[$__range])))", "refId": "A"}
+          ],
+          "title": "E2E Latency (P99)",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "displayName": "P90", "unit": "s"},
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+          "id": 4,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [
+            {"expr": "histogram_quantile(0.90, sum by(le) (rate(vllm:e2e_request_latency_seconds_bucket[$__range])))", "refId": "A"}
+          ],
+          "title": "E2E Latency (P90)",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "displayName": "Avg", "unit": "s"},
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 5},
+          "id": 2,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [
+            {"expr": "(sum(increase(vllm:e2e_request_latency_seconds_sum[$__range])) / sum(increase(vllm:e2e_request_latency_seconds_count[$__range])))", "refId": "A"}
+          ],
+          "title": "E2E Latency (Avg)",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "displayName": "P50", "unit": "s"},
+            "overrides": []
+          },
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 5},
+          "id": 3,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "targets": [
+            {"expr": "histogram_quantile(0.50, sum by(le) (rate(vllm:e2e_request_latency_seconds_bucket[$__range])))", "refId": "A"}
+          ],
+          "title": "E2E Latency (P50)",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9},
+          "id": 8,
+          "panels": [],
+          "title": "TTFT (Time To First Token)",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisColorMode": "text",
+                "axisLabel": "Latency",
+                "drawStyle": "line",
+                "fillOpacity": 18,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "spanNulls": true
+              },
+              "decimals": 2,
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10},
+          "id": 10,
+          "options": {
+            "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+            "tooltip": {"mode": "single", "sort": "none"}
+          },
+          "targets": [
+            {"expr": "rate(vllm:time_to_first_token_seconds_sum[$__interval]) / rate(vllm:time_to_first_token_seconds_count[$__interval])", "legendFormat": "TTFT (Avg)", "refId": "A"}
+          ],
+          "title": "TTFT Over Time",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "displayName": "P99", "unit": "s"}},
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 10},
+          "id": 14,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}},
+          "targets": [{"expr": "histogram_quantile(0.99, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__range])))", "refId": "A"}],
+          "title": "TTFT (P99)",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 2, "displayName": "P90", "unit": "s"}},
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 10},
+          "id": 13,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}},
+          "targets": [{"expr": "histogram_quantile(0.90, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__range])))", "refId": "A"}],
+          "title": "TTFT (P90)",
+          "type": "stat"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 18},
+          "id": 7,
+          "panels": [],
+          "title": "ITL (Inter-Token Latency)",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {"axisColorMode": "text", "drawStyle": "line", "fillOpacity": 17, "lineInterpolation": "linear", "lineWidth": 1},
+              "decimals": 2,
+              "unit": "s"
+            }
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 19},
+          "id": 15,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single"}},
+          "targets": [
+            {"expr": "rate(vllm:inter_token_latency_seconds_sum[$__interval]) / rate(vllm:inter_token_latency_seconds_count[$__interval])", "legendFormat": "ITL (Avg)", "refId": "A"},
+            {"expr": "histogram_quantile(0.99, sum by(le) (rate(vllm:inter_token_latency_seconds_bucket[$__interval])))", "legendFormat": "ITL (P99)", "refId": "D"}
+          ],
+          "title": "ITL Over Time",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 27},
+          "id": 6,
+          "panels": [],
+          "title": "KV Cache & Requests",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 1, "unit": "percentunit"}},
+          "gridPos": {"h": 6, "w": 6, "x": 0, "y": 28},
+          "id": 20,
+          "options": {"colorMode": "value", "graphMode": "area", "reduceOptions": {"calcs": ["lastNotNull"]}},
+          "targets": [{"expr": "avg(vllm:gpu_cache_usage_perc) or avg(vllm:kv_cache_usage_perc)", "refId": "A"}],
+          "title": "KV Cache Usage",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisColorMode": "text", "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1}, "unit": "short"}
+          },
+          "gridPos": {"h": 6, "w": 9, "x": 6, "y": 28},
+          "id": 21,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single"}},
+          "targets": [
+            {"expr": "sum by (pod) (vllm:num_requests_running)", "legendFormat": "{{pod}}", "refId": "A"}
+          ],
+          "title": "Running Requests by Pod",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+          "fieldConfig": {
+            "defaults": {"color": {"mode": "palette-classic"}, "custom": {"axisColorMode": "text", "drawStyle": "line", "fillOpacity": 0, "lineWidth": 1}, "unit": "short"}
+          },
+          "gridPos": {"h": 6, "w": 9, "x": 15, "y": 28},
+          "id": 22,
+          "options": {"legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "single"}},
+          "targets": [
+            {"expr": "sum by (pod) (vllm:num_requests_waiting)", "legendFormat": "{{pod}}", "refId": "A"}
+          ],
+          "title": "Waiting Requests by Pod",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "5s",
+      "schemaVersion": 38,
+      "tags": ["vllm", "performance"],
+      "templating": {
+        "list": [
+          {"name": "DS_PROMETHEUS", "type": "datasource", "query": "prometheus", "current": {"text": "Prometheus", "value": "prometheus"}}
+        ]
+      },
+      "time": {"from": "now-15m", "to": "now"},
+      "title": "vLLM Performance Statistics",
+      "uid": "vllm-performance"
+    }

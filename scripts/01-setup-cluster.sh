@@ -1,59 +1,53 @@
+
 #!/bin/bash
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-
-echo "=== Envoy AI Gateway Lab - Cluster Setup ==="
-echo ""
-
-if ! command -v kind &> /dev/null; then
-    echo "Error: kind is not installed. Install: https://kind.sigs.k8s.io/docs/user/quick-start/"
+# Check environment
+ARCH=$(uname -m)
+if [ "$ARCH" != "x86_64" ]; then
+    echo "Error: x86_64 required. Current: $ARCH"
+    echo "vLLM CPU requires x86_64 with AVX-512."
     exit 1
 fi
 
-if ! command -v kubectl &> /dev/null; then
-    echo "Error: kubectl is not installed. Install: https://kubernetes.io/docs/tasks/tools/"
-    exit 1
+# Install k3s if not present
+if ! command -v k3s &>/dev/null; then
+    echo "[1/4] Installing k3s..."
+    curl -sfL https://get.k3s.io | sh -s - --write-kubeconfig-mode 644
+    sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+else
+    echo "[1/4] k3s already installed"
 fi
 
-if ! docker info &> /dev/null 2>&1; then
-    echo "Error: Docker is not running."
-    exit 1
-fi
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> ~/.bashrc
 
-CLUSTER_NAME="ai-gateway-lab"
-
-if kind get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
-    echo "Cluster '$CLUSTER_NAME' already exists."
-    read -p "Delete and recreate? (y/N) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        kind delete cluster --name "$CLUSTER_NAME"
-    else
-        exit 0
-    fi
-fi
-
-echo "Creating kind cluster '$CLUSTER_NAME'..."
-kind create cluster --name "$CLUSTER_NAME" --config "$PROJECT_DIR/kind-config.yaml"
-
+# Wait for Kubernetes
 echo ""
-kubectl wait --for=condition=Ready nodes --all --timeout=120s
-
-echo ""
-echo "Installing cloud-provider-kind..."
-if ! command -v cloud-provider-kind &> /dev/null; then
-    brew install cloud-provider-kind 2>/dev/null || \
-    go install sigs.k8s.io/cloud-provider-kind@latest 2>/dev/null || \
-    echo "cloud-provider-kind install failed: https://github.com/kubernetes-sigs/cloud-provider-kind"
-fi
-
-pkill cloud-provider-kind 2>/dev/null || true
-echo "Starting cloud-provider-kind (sudo password required)..."
-sudo cloud-provider-kind </dev/null &>/dev/null &
-
-echo ""
+echo "[2/4] Waiting for Kubernetes..."
+kubectl wait --for=condition=Ready node --timeout=120s
 kubectl get nodes
+
+# Install Helm
 echo ""
-echo "Next: ./scripts/02-install-envoy-gateway.sh"
+if ! command -v helm &>/dev/null; then
+    echo "[3/4] Installing Helm..."
+    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+else
+    echo "[3/4] Helm already installed"
+fi
+
+# Install Envoy Gateway
+echo ""
+echo "[4/4] Installing Envoy Gateway v1.6.3..."
+helm upgrade --install eg oci://docker.io/envoyproxy/gateway-helm \
+  --version v1.6.3 \
+  --namespace envoy-gateway-system \
+  --create-namespace
+
+kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
+
+echo ""
+echo "=== Setup Complete ==="
+echo ""
+echo "Next: ./scripts/02-install-monitoring.sh"

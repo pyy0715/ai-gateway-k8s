@@ -1,3 +1,0 @@
-# 이 파일은 사용하지 않습니다.
-# mock-vllm Pod는 app=vllm-qwen label을 사용하므로
-# 기존 k8s/backend/vllm-qwen.yaml 의 headless Service를 그대로 재사용합니다.

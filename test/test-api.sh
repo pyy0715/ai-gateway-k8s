@@ -23,22 +23,8 @@ echo ""
 pass=0
 fail=0
 
-# Test 1: Models List (connectivity check)
+# Test 1: Models List
 echo "--- Test 1: Models List ---"
-MODELS=$(curl -sf "${BASE_URL}/v1/models" 2>/dev/null || echo "{}")
-MODEL_COUNT=$(echo "$MODELS" | jq '.data | length' 2>/dev/null || echo "0")
-
-if [ "$MODEL_COUNT" -gt 0 ]; then
-    echo "✓ Gateway connected ($MODEL_COUNT models)"
-    ((pass++))
-else
-    echo "✗ Gateway not responding"
-    ((fail++))
-fi
-echo ""
-
-# Test 2: Models List
-echo "--- Test 2: Models List ---"
 MODELS=$(curl -sf "${BASE_URL}/v1/models" 2>/dev/null || echo "{}")
 MODEL_COUNT=$(echo "$MODELS" | jq '.data | length' 2>/dev/null || echo "0")
 
@@ -52,8 +38,8 @@ else
 fi
 echo ""
 
-# Test 3: Chat Completion (Qwen)
-echo "--- Test 3: Chat Completion (Qwen) ---"
+# Test 2: Chat Completion (Qwen)
+echo "--- Test 2: Chat Completion (Qwen) ---"
 RESPONSE=$(curl -sf -X POST "${BASE_URL}/v1/chat/completions" \
     -H "Content-Type: application/json" \
     -d '{
@@ -73,8 +59,8 @@ else
 fi
 echo ""
 
-# Test 4: Model Routing (header-based)
-echo "--- Test 4: Model Routing (header) ---"
+# Test 3: Model Routing (header-based)
+echo "--- Test 3: Model Routing (header) ---"
 RESPONSE=$(curl -sf -X POST "${BASE_URL}/v1/chat/completions" \
     -H "Content-Type: application/json" \
     -H "x-ai-eg-model: Qwen/Qwen3-0.6B" \

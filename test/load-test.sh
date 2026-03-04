@@ -4,10 +4,10 @@ set -e
 # Default values
 REQUESTS=${1:-20}
 CONCURRENT=${2:-5}
-PROMPT=${3:-"Write a short greeting"}
+MODEL=${3:-"Qwen/Qwen3-0.6B"}
 
 echo "=== Load Test ==="
-echo "Requests: $REQUESTS, Concurrent: $CONCURRENT"
+echo "Requests: $REQUESTS, Concurrent: $CONCURRENT, Model: $MODEL"
 echo ""
 
 # Get Gateway IP
@@ -23,19 +23,18 @@ BASE_URL="http://${GATEWAY_IP}"
 echo "Gateway: $BASE_URL"
 echo ""
 
-# Get Pod list before test
-echo "--- Pods Before Test ---"
+# Get Pod list
 PODS=$(kubectl get pods -l app=vllm-qwen -o jsonpath='{.items[*].metadata.name}')
-echo "Backend Pods: $PODS"
 POD_COUNT=$(echo $PODS | wc -w | tr -d ' ')
-echo "Pod Count: $POD_COUNT"
+echo "Backend Pods: $POD_COUNT"
 echo ""
 
-# Check initial request distribution
-echo "--- Initial Request Distribution ---"
-for pod in $(kubectl get pods -l app=vllm-qwen -o jsonpath='{.items[*].metadata.name}'); do
-    COUNT=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_running" | awk '{print $2}' || echo "0")
-    echo "$pod: $COUNT running"
+# Baseline metrics
+echo "--- Baseline Metrics ---"
+for pod in $PODS; do
+    RUNNING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_running" | awk '{print $2}' || echo "0")
+    WAITING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_waiting" | awk '{print $2}' || echo "0")
+    echo "$pod: running=$RUNNING, waiting=$WAITING"
 done
 echo ""
 
@@ -51,8 +50,8 @@ for ((i=1; i<=REQUESTS; i++)); do
         curl -sf -o "$TMPDIR/resp_$i.json" -w "%{http_code}|%{time_total}" \
             -X POST "${BASE_URL}/v1/chat/completions" \
             -H "Content-Type: application/json" \
-            -d "{\"model\": \"Qwen/Qwen3-0.6B\", \"messages\": [{\"role\": \"user\", \"content\": \"$PROMPT\"}], \"max_tokens\": 20}" \
-            --max-time 30 > "$TMPDIR/meta_$i.txt" 2>/dev/null || echo "000|0" > "$TMPDIR/meta_$i.txt"
+            -d "{\"model\": \"${MODEL}\", \"messages\": [{\"role\": \"user\", \"content\": \"Write a short greeting\"}], \"max_tokens\": 20}" \
+            --max-time 120 > "$TMPDIR/meta_$i.txt" 2>/dev/null || echo "000|0" > "$TMPDIR/meta_$i.txt"
     ) &
 
     if (( i % CONCURRENT == 0 )); then
@@ -103,29 +102,18 @@ if [ "$SUCCESS" -gt 0 ]; then
 fi
 echo ""
 
-# Check request distribution after test
-echo "--- Request Distribution After Test ---"
-CURRENT_PODS=$(kubectl get pods -l app=vllm-qwen -o jsonpath='{.items[*].metadata.name}')
-for pod in $CURRENT_PODS; do
+# Post-test metrics
+echo "--- Post-Test Metrics ---"
+for pod in $PODS; do
     RUNNING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_running" | awk '{print $2}' || echo "0")
     WAITING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_waiting" | awk '{print $2}' || echo "0")
     echo "$pod: running=$RUNNING, waiting=$WAITING"
 done
 echo ""
 
-# EPP Insights
-echo "--- EPP Routing Insights ---"
-echo "• EPP should distribute requests based on:"
-echo "  - KV-cache utilization"
-echo "  - Queue depth"
-echo "  - Prefix cache hits"
-echo ""
-
-if [ "$POD_COUNT" -gt 1 ]; then
-    echo "✓ Multiple pods available for load balancing"
-else
-    echo "! Only 1 pod - cannot verify EPP distribution"
-fi
+# EPP routing log snippet
+echo "--- Recent EPP Routing ---"
+kubectl logs -l app.kubernetes.io/name=epp --tail=10 2>/dev/null | grep -E "(request|route|select)" || echo "No EPP logs available"
 echo ""
 
 # Show sample response
