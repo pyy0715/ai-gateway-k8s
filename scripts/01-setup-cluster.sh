@@ -25,7 +25,7 @@ echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> ~/.bashrc
 # Wait for Kubernetes
 echo ""
 echo "[2/4] Waiting for Kubernetes..."
-kubectl wait --for=condition=Ready node --timeout=120s
+kubectl wait --for=condition=Ready node --all --timeout=120s
 kubectl get nodes
 
 # Install Helm
