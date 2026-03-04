@@ -49,6 +49,8 @@ cd envoy-llm-gateway-lab
 chmod +x scripts/*.sh test/*.sh
 
 ./scripts/01-setup-cluster.sh          # k3s + Helm + Envoy Gateway
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
 ./scripts/02-install-monitoring.sh     # kube-prometheus-stack
 ./scripts/03-install-ai-gateway.sh     # AI Gateway CRDs
 ./scripts/04-deploy-all.sh             # vLLM + EPP + Gateway

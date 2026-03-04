@@ -19,9 +19,6 @@ else
     echo "[1/4] k3s already installed"
 fi
 
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> ~/.bashrc
-
 # Wait for Kubernetes
 echo ""
 echo "[2/4] Waiting for Kubernetes..."
