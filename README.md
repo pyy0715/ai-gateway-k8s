@@ -41,6 +41,7 @@ sudo apt update && sudo apt install -y curl wget git
 
 git clone https://github.com/pyy0715/envoy-llm-gateway-lab.git
 cd envoy-llm-gateway-lab
+chmod +x scripts/*.sh test/*.sh
 
 ./scripts/01-setup-cluster.sh          # k3s + Helm + Envoy Gateway
 ./scripts/02-install-monitoring.sh     # kube-prometheus-stack

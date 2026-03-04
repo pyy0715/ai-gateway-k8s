@@ -58,8 +58,8 @@ spec:
             - /bin/bash
             - -c
             - |
-              pip install -q huggingface-hub
-              huggingface-cli download Qwen/Qwen3-0.6B --local-dir /models/Qwen3-0.6B
+              pip install -q huggingface_hub
+              hf download Qwen/Qwen3-0.6B --local-dir /models/Qwen3-0.6B
           volumeMounts:
             - name: model-storage
               mountPath: /models
