@@ -27,7 +27,7 @@ This lab demonstrates how EPP routes requests based on real-time vLLM metrics:
 ## Requirements
 
 - **Architecture**: x86_64 with AVX512 support
-- **RAM**: 8 GiB (2 replicas) or 4 GiB (1 replica)
+- **RAM**: 4 GiB minimum (1 replica), 8 GiB for EPP routing test (2 replicas)
 - **Storage**: 10 GB
 - **OS**: Ubuntu 22.04+ or Amazon Linux 2023
 
@@ -37,7 +37,8 @@ This lab demonstrates how EPP routes requests based on real-time vLLM metrics:
 > DigitalOcean and other providers may not expose AVX512 to VMs, causing `Illegal instruction` error.
 
 > [!TIP]
-> Recommended: **AWS c6i.large** (2 vCPU, 4 GiB) ~$0.085/hr, or **c6i.xlarge** (4 vCPU, 8 GiB) ~$0.17/hr
+> - **c6i.large** (2 vCPU, 4 GiB) ~$0.085/hr - basic test (1 replica)
+> - **c6i.xlarge** (4 vCPU, 8 GiB) ~$0.17/hr - EPP routing test (2 replicas)
 
 ## Quick Start
 
