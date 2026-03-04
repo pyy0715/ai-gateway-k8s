@@ -22,6 +22,11 @@ fi
 # Wait for Kubernetes
 echo ""
 echo "[2/4] Waiting for Kubernetes..."
+sleep 10
+until kubectl get nodes &>/dev/null; do
+    echo "Waiting for node to be created..."
+    sleep 2
+done
 kubectl wait --for=condition=Ready node --all --timeout=120s
 kubectl get nodes
 

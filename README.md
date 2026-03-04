@@ -27,18 +27,16 @@ This lab demonstrates how EPP routes requests based on real-time vLLM metrics:
 ## Requirements
 
 - **Architecture**: x86_64 with AVX512 support
-- **RAM**: 4 GiB minimum (1 replica), 8 GiB for EPP routing test (2 replicas)
-- **Storage**: 10 GB
+- **RAM**: 16 GiB recommended (2 replicas), 8 GiB minimum (1 replica)
+- **Storage**: 20 GB
 - **OS**: Ubuntu 22.04+ or Amazon Linux 2023
 
 > [!IMPORTANT]
-> vLLM CPU pre-built images require AVX512. **AWS c6i/m6i** (Intel Ice Lake) or **GCP n2-standard** (Intel Cascade Lake+) required.
->
-> DigitalOcean and other providers may not expose AVX512 to VMs, causing `Illegal instruction` error.
+> vLLM CPU pre-built images require AVX512. Use Intel Ice Lake or newer instances (AWS c6i/m6i, GCP n2-standard, etc.)
 
 > [!TIP]
-> - **c6i.large** (2 vCPU, 4 GiB) ~$0.085/hr - basic test (1 replica)
-> - **c6i.xlarge** (4 vCPU, 8 GiB) ~$0.17/hr - EPP routing test (2 replicas)
+> - **m6i.xlarge** (4 vCPU, 16 GiB) ~$0.20/hr - recommended (2 replicas for EPP routing test)
+> - **c6i.xlarge** (4 vCPU, 8 GiB) ~$0.17/hr - basic test (1 replica only)
 
 ## Quick Start
 
@@ -47,11 +45,10 @@ sudo apt update && sudo apt install -y curl wget git
 
 git clone https://github.com/pyy0715/envoy-llm-gateway-lab.git
 cd envoy-llm-gateway-lab
-chmod +x scripts/*.sh test/*.sh
 
-./scripts/01-setup-cluster.sh          # k3s + Helm + Envoy Gateway
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
+./scripts/01-setup-cluster.sh          # k3s + Helm + Envoy Gateway
 ./scripts/02-install-monitoring.sh     # kube-prometheus-stack
 ./scripts/03-install-ai-gateway.sh     # AI Gateway CRDs
 ./scripts/04-deploy-all.sh             # vLLM + EPP + Gateway
