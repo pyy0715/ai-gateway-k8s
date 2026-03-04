@@ -9,14 +9,14 @@ GATEWAY_IP=$(kubectl get gateway ai-gateway -o jsonpath='{.status.addresses[0].v
 
 if [ -z "$GATEWAY_IP" ]; then
     echo "Gateway IP not found. Setting up port-forward..."
-    kubectl port-forward svc/envoy-default-ai-gateway -n envoy-gateway-system 8080:80 &>/dev/null &
+    kubectl port-forward svc/envoy-default-ai-gateway -n envoy-gateway-system 8080:8888 &>/dev/null &
     PF_PID=$!
     sleep 3
     GATEWAY_IP="localhost:8080"
     CLEANUP=true
 fi
 
-BASE_URL="http://${GATEWAY_IP}"
+BASE_URL="http://${GATEWAY_IP}:8888"
 echo "Gateway: $BASE_URL"
 echo ""
 

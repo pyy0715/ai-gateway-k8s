@@ -39,13 +39,23 @@ else
     echo "[3/4] Helm already installed"
 fi
 
-# Install Envoy Gateway
+# Install Envoy Gateway with Extension Manager for AI Gateway
 echo ""
-echo "[4/4] Installing Envoy Gateway v1.6.3..."
+echo "[4/4] Installing Envoy Gateway v1.6.3 with AI Gateway Extension..."
 helm upgrade --install eg oci://docker.io/envoyproxy/gateway-helm \
   --version v1.6.3 \
   --namespace envoy-gateway-system \
-  --create-namespace
+  --create-namespace \
+  --set config.envoyGateway.extensionManager.hooks.xdsTranslator.translation.listener.includeAll=true \
+  --set config.envoyGateway.extensionManager.hooks.xdsTranslator.translation.route.includeAll=true \
+  --set config.envoyGateway.extensionManager.hooks.xdsTranslator.translation.cluster.includeAll=true \
+  --set config.envoyGateway.extensionManager.hooks.xdsTranslator.translation.secret.includeAll=true \
+  --set config.envoyGateway.extensionManager.hooks.xdsTranslator.post[0]=Translation \
+  --set config.envoyGateway.extensionManager.hooks.xdsTranslator.post[1]=Cluster \
+  --set config.envoyGateway.extensionManager.hooks.xdsTranslator.post[2]=Route \
+  --set config.envoyGateway.extensionManager.service.fqdn.hostname=ai-gateway-controller.envoy-ai-gateway-system.svc.cluster.local \
+  --set config.envoyGateway.extensionManager.service.fqdn.port=1063 \
+  --set config.envoyGateway.extensionApis.enableBackend=true
 
 kubectl wait --timeout=5m -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
 
