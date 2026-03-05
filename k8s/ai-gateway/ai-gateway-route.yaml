@@ -13,8 +13,9 @@ spec:
         - path:
             type: PathPrefix
             value: /v1
+      timeouts:
+        request: 300s
       backendRefs:
         - group: inference.networking.k8s.io
           kind: InferencePool
           name: vllm-qwen
-          port: 8000
