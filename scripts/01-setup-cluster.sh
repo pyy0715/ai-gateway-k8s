@@ -2,12 +2,21 @@
 #!/bin/bash
 set -e
 
-# Check environment
-ARCH=$(uname -m)
-if [ "$ARCH" != "x86_64" ]; then
-    echo "Error: x86_64 required. Current: $ARCH"
-    echo "vLLM CPU requires x86_64 with AVX-512."
-    exit 1
+# KUBECONFIG default for k3s
+export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+
+# Check GPU environment
+if command -v nvidia-smi &>/dev/null; then
+    echo "GPU detected:"
+    nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+else
+    echo "WARNING: nvidia-smi not found. NVIDIA GPU may not be available."
+    echo "vLLM GPU requires nvidia-container-toolkit to be installed."
+    read -p "Continue anyway? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
 fi
 
 # Install k3s if not present

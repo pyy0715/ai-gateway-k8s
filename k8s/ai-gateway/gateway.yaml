@@ -53,5 +53,5 @@ spec:
       name: ai-gateway
   timeout:
     http:
-      requestTimeout: 10m
-      connectionIdleTimeout: 15m
+      requestTimeout: 3m
+      connectionIdleTimeout: 5m

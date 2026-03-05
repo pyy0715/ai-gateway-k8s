@@ -32,8 +32,8 @@ echo ""
 # Baseline metrics
 echo "--- Baseline Metrics ---"
 for pod in $PODS; do
-    RUNNING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_running" | awk '{print $2}' || echo "0")
-    WAITING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_waiting" | awk '{print $2}' || echo "0")
+    RUNNING=$(kubectl exec $pod -- curl -sf localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_running{" | head -1 | awk '{print $2}' || echo "?")
+    WAITING=$(kubectl exec $pod -- curl -sf localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_waiting{" | head -1 | awk '{print $2}' || echo "?")
     echo "$pod: running=$RUNNING, waiting=$WAITING"
 done
 echo ""
@@ -105,8 +105,8 @@ echo ""
 # Post-test metrics
 echo "--- Post-Test Metrics ---"
 for pod in $PODS; do
-    RUNNING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_running" | awk '{print $2}' || echo "0")
-    WAITING=$(kubectl exec $pod -- curl -s localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_waiting" | awk '{print $2}' || echo "0")
+    RUNNING=$(kubectl exec $pod -- curl -sf localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_running{" | head -1 | awk '{print $2}' || echo "?")
+    WAITING=$(kubectl exec $pod -- curl -sf localhost:8000/metrics 2>/dev/null | grep "^vllm:num_requests_waiting{" | head -1 | awk '{print $2}' || echo "?")
     echo "$pod: running=$RUNNING, waiting=$WAITING"
 done
 echo ""

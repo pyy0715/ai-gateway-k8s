@@ -12,11 +12,11 @@ if [ -z "$GATEWAY_IP" ]; then
     kubectl port-forward svc/envoy-default-ai-gateway -n envoy-gateway-system 8080:8888 &>/dev/null &
     PF_PID=$!
     sleep 3
-    GATEWAY_IP="localhost:8080"
+    BASE_URL="http://localhost:8080"
     CLEANUP=true
+else
+    BASE_URL="http://${GATEWAY_IP}:8888"
 fi
-
-BASE_URL="http://${GATEWAY_IP}:8888"
 echo "Gateway: $BASE_URL"
 echo ""
 

@@ -46,33 +46,33 @@ echo ""
 # Clear EPP logs baseline
 EPP_LOG_START=$(kubectl logs -l app=vllm-qwen-epp --tail=1 2>/dev/null | wc -l || echo "0")
 
-echo "--- [2] Phase 1: Saturate with SLOW requests (max_tokens=300) ---"
-echo "Sending 10 slow concurrent requests to build up queue depth..."
+echo "--- [2] Phase 1: Saturate with SLOW requests (max_tokens=2048) ---"
+echo "Sending 20 slow concurrent requests to build up queue depth on GPU..."
 echo ""
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 
 # Long prompt to maximize KV cache usage + large max_tokens to keep requests in-flight
-LONG_PROMPT="Please write a detailed explanation of how neural networks work, including backpropagation, gradient descent, activation functions, and the history of deep learning. Be as thorough as possible."
+LONG_PROMPT="Please write a detailed explanation of how neural networks work, including backpropagation, gradient descent, activation functions, and the history of deep learning. Cover the mathematics behind each concept, provide examples of real-world applications, and discuss the evolution from perceptrons to modern transformer architectures. Be as thorough as possible."
 
-for i in $(seq 1 10); do
+for i in $(seq 1 20); do
     (
         curl -sf -o "$TMPDIR/slow_$i.json" \
             -X POST "${BASE_URL}/v1/chat/completions" \
             -H "Content-Type: application/json" \
-            -d "{\"model\": \"${MODEL}\", \"messages\": [{\"role\": \"user\", \"content\": \"${LONG_PROMPT}\"}], \"max_tokens\": 300}" \
-            --max-time 300 > /dev/null 2>&1 || true
+            -d "{\"model\": \"${MODEL}\", \"messages\": [{\"role\": \"user\", \"content\": \"${LONG_PROMPT}\"}], \"max_tokens\": 2048}" \
+            --max-time 600 > /dev/null 2>&1 || true
         echo -n "."
     ) &
 done
 
-# While slow requests are running, sample pod metrics every 2s for 10s
+# While slow requests are running, sample pod metrics every 3s for 15s
 echo "Sampling pod metrics while requests are in flight:"
 echo ""
 for sample in 1 2 3 4 5; do
-    sleep 2
-    echo "[t+${sample}s × 2]"
+    sleep 3
+    echo "[t+$((sample * 3))s]"
     pod_metrics
     echo ""
 done
@@ -120,8 +120,8 @@ for pod in $PODS; do
     echo "  $pod → $POD_IP"
 done
 echo ""
-echo "EPP log routing counts (last 100 lines):"
-EPP_LOG=$(kubectl logs -l app=vllm-qwen-epp --tail=100 2>/dev/null || echo "")
+echo "EPP log routing counts (last 200 lines):"
+EPP_LOG=$(kubectl logs -l app=vllm-qwen-epp --tail=200 2>/dev/null || echo "")
 for pod in $PODS; do
     POD_IP=$(kubectl get pod $pod -o jsonpath='{.status.podIP}' 2>/dev/null || echo "unknown")
     COUNT=$(echo "$EPP_LOG" | grep -c "$POD_IP" 2>/dev/null || echo "0")

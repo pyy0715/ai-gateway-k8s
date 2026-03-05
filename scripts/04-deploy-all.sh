@@ -1,18 +1,21 @@
 #!/bin/bash
 set -e
 
+# KUBECONFIG default for k3s
+export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-echo "=== Deploying vLLM CPU + AI Gateway ==="
+echo "=== Deploying vLLM GPU + AI Gateway ==="
 echo ""
 
-# vLLM CPU Backend
-echo "[1/3] Deploying vLLM CPU..."
+# vLLM GPU Backend
+echo "[1/3] Deploying vLLM GPU..."
 kubectl apply -f "$PROJECT_DIR/k8s/backend/vllm-qwen.yaml"
 
 echo ""
-echo "Waiting for vLLM pods (3-5 min for model download)..."
+echo "Waiting for vLLM pods (3-10 min for model download + GPU init)..."
 kubectl wait --for=condition=Ready pods -l app=vllm-qwen --timeout=600s
 
 # InferencePool + EPP
@@ -37,6 +40,8 @@ kubectl get gateway,inferencepool
 GATEWAY_IP=$(kubectl get gateway ai-gateway -o jsonpath='{.status.addresses[0].value}')
 echo ""
 echo "=== Done ==="
-echo "API: http://${GATEWAY_IP}"
+echo "API: http://${GATEWAY_IP}:8888"
 echo ""
-echo "Test: ./test/load-test.sh 30 10"
+echo "Quick test:  ./test/test-api.sh"
+echo "Load test:   ./test/load-test.sh 30 10"
+echo "Smart route: ./test/smart-routing-test.sh"

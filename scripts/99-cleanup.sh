@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# KUBECONFIG default for k3s
+export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -19,7 +22,7 @@ echo "Deleting Kubernetes resources..."
 kubectl delete -f "$PROJECT_DIR/k8s/ai-gateway/" --ignore-not-found
 kubectl delete -f "$PROJECT_DIR/k8s/inference-pool/qwen/" --ignore-not-found
 kubectl delete -f "$PROJECT_DIR/k8s/backend/vllm-qwen.yaml" --ignore-not-found
-kubectl delete -f "$PROJECT_DIR/k8s/monitoring/vllm-dashboard.yaml" --ignore-not-found
+kubectl delete -f "$PROJECT_DIR/k8s/monitoring/epp-routing-dashboard.yaml" --ignore-not-found
 
 # Uninstall Helm releases
 echo "Uninstalling Helm releases..."

@@ -1,18 +1,6 @@
-# vLLM CPU Deployment
-# Requires x86_64 architecture
+# vLLM GPU Deployment
+# Requires NVIDIA GPU with nvidia-container-toolkit
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: vllm-model-storage
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -51,6 +39,9 @@ spec:
         prometheus.io/port: "8000"
         prometheus.io/path: "/metrics"
     spec:
+      # Allow time for in-flight requests to drain on shutdown.
+      # preStop sleep (30s) + worst-case request drain (~55s) + safety buffer ≈ 130s
+      terminationGracePeriodSeconds: 130
       initContainers:
         - name: download-model
           image: python:3.11-slim
@@ -65,25 +56,22 @@ spec:
               mountPath: /models
       containers:
         - name: vllm
-          image: public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.9.0.1
+          image: vllm/vllm-openai:v0.9.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8000
+              protocol: TCP
           args:
             - --model=/models/Qwen3-0.6B
             - --served-model-name=Qwen/Qwen3-0.6B
             - --host=0.0.0.0
             - --port=8000
-            - --dtype=bfloat16
+            - --dtype=auto
             - --max-model-len=2048
-            - --disable-sliding-window
+            - --enable-prefix-caching
             - --api-key=
           env:
-            - name: VLLM_CPU_KVCACHE_SPACE
-              value: "1"
-            - name: VLLM_CPU_OMP_THREADS_BIND
-              value: "0-1"
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -92,22 +80,52 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              nvidia.com/gpu: "1"
           volumeMounts:
             - name: model-storage
               mountPath: /models
+            - name: shm
+              mountPath: /dev/shm
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 30
+          # startupProbe gates liveness/readiness until model is fully loaded.
+          # Max startup time = failureThreshold × periodSeconds = 600s (10 min).
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            failureThreshold: 600
+            initialDelaySeconds: 2
+            periodSeconds: 1
           readinessProbe:
             httpGet:
               path: /health
-              port: 8000
-            initialDelaySeconds: 60
-            periodSeconds: 10
+              port: http
+              scheme: HTTP
+            periodSeconds: 1
+            failureThreshold: 1
+            timeoutSeconds: 1
           livenessProbe:
             httpGet:
               path: /health
-              port: 8000
-            initialDelaySeconds: 120
-            periodSeconds: 30
+              port: http
+              scheme: HTTP
+            periodSeconds: 1
+            failureThreshold: 5
+            timeoutSeconds: 1
+      # Prevent Kubernetes from injecting service env vars that collide with
+      # VLLM_PORT (see upstream docs for details).
+      enableServiceLinks: false
       volumes:
         - name: model-storage
-          persistentVolumeClaim:
-            claimName: vllm-model-storage
+          emptyDir: {}
+        - name: shm
+          emptyDir:
+            medium: Memory

@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# KUBECONFIG default for k3s
+export KUBECONFIG=${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -33,15 +36,10 @@ echo ""
 echo "Waiting for pods..."
 kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=grafana -n monitoring --timeout=300s
 
-# Deploy custom dashboards
+# Deploy custom dashboard
 echo ""
-echo "Deploying vLLM/Inference Extension dashboards..."
-kubectl apply -f "$PROJECT_DIR/k8s/monitoring/vllm-dashboard.yaml"
-kubectl apply -f "$PROJECT_DIR/k8s/monitoring/inference-extension-dashboard.yaml"
-
-# Restart Grafana to load dashboards
-kubectl rollout restart deployment/kube-prometheus-stack-grafana -n monitoring
-kubectl wait --for=condition=Available deployment/kube-prometheus-stack-grafana -n monitoring --timeout=120s
+echo "Deploying EPP Smart Routing dashboard..."
+kubectl apply -f "$PROJECT_DIR/k8s/monitoring/epp-routing-dashboard.yaml"
 
 echo ""
 echo "=== Monitoring Installed ==="
@@ -56,8 +54,7 @@ else
 fi
 echo ""
 echo "Login: admin / admin"
-echo "Dashboards:"
-echo "  - vLLM Performance Statistics"
-echo "  - Inference Extension - EPP Metrics"
+echo "Dashboard:"
+echo "  - EPP Smart Routing"
 echo ""
 echo "Next: ./scripts/03-install-ai-gateway.sh"
