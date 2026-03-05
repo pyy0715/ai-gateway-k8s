@@ -19,7 +19,7 @@ if [ -z "$GATEWAY_IP" ]; then
     exit 1
 fi
 
-BASE_URL="http://${GATEWAY_IP}"
+BASE_URL="http://${GATEWAY_IP}:8888"
 echo "Gateway: $BASE_URL"
 echo ""
 
