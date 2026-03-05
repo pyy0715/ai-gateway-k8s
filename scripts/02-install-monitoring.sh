@@ -14,7 +14,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 
 # Create additional scrape configs for vLLM/EPP
-cat <<EOF | kubectl apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Secret
 metadata:
