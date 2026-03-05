@@ -7,10 +7,15 @@ spec:
   selector:
     app: vllm-qwen-epp
   ports:
-    - protocol: TCP
+    - name: grpc
+      protocol: TCP
       port: 9002
       targetPort: 9002
       appProtocol: http2
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
   type: ClusterIP
 ---
 apiVersion: apps/v1
