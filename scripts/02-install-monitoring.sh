@@ -14,55 +14,7 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 
 # Create additional scrape configs for vLLM/EPP
-cat <<'EOF' | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kube-prometheus-stack-additional-scrape-config
-  namespace: monitoring
-type: Opaque
-stringData:
-  additional-scrape-configs.yaml: |
-    - job_name: 'vllm-metrics'
-      kubernetes_sd_configs:
-        - role: pod
-      relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_label_app]
-          regex: vllm-qwen
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_ip]
-          replacement: ${1}:8000
-          target_label: __address__
-        - source_labels: [__meta_kubernetes_pod_name]
-          target_label: pod
-      metrics_path: /metrics
-
-    - job_name: 'epp-metrics'
-      metrics_path: /metrics
-      kubernetes_sd_configs:
-        - role: pod
-      relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_label_app]
-          regex: vllm-qwen-epp
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_ip]
-          replacement: ${1}:9090
-          target_label: __address__
-        - source_labels: [__meta_kubernetes_pod_name]
-          target_label: pod
-
-    - job_name: 'envoy-proxy'
-      kubernetes_sd_configs:
-        - role: pod
-          namespaces:
-            names: [envoy-gateway-system]
-      relabel_configs:
-        - source_labels: [__meta_kubernetes_pod_label_gateway_envoyproxy_io_owning_gateway_namespace]
-          action: keep
-        - source_labels: [__meta_kubernetes_pod_ip]
-          replacement: ${1}:19001
-          target_label: __address__
-EOF
+kubectl apply -f "$PROJECT_DIR/k8s/monitoring/prometheus-scrape-config.yaml"
 
 # Install kube-prometheus-stack
 helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \

@@ -113,7 +113,7 @@ echo ""
 
 # EPP routing log snippet
 echo "--- Recent EPP Routing ---"
-kubectl logs -l app.kubernetes.io/name=epp --tail=10 2>/dev/null | grep -E "(request|route|select)" || echo "No EPP logs available"
+kubectl logs -l app=vllm-qwen-epp --tail=10 2>/dev/null | grep -E "(request|route|select|scheduled|picked)" || echo "No EPP logs available"
 echo ""
 
 # Show sample response
