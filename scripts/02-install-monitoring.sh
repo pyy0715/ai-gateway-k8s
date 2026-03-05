@@ -38,6 +38,7 @@ stringData:
       metrics_path: /metrics
 
     - job_name: 'epp-metrics'
+      metrics_path: /metrics
       kubernetes_sd_configs:
         - role: pod
       relabel_configs:
@@ -81,8 +82,9 @@ kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=grafana -n mon
 
 # Deploy custom dashboards
 echo ""
-echo "Deploying vLLM/EPP dashboards..."
+echo "Deploying vLLM/Inference Extension dashboards..."
 kubectl apply -f "$PROJECT_DIR/k8s/monitoring/vllm-dashboard.yaml"
+kubectl apply -f "$PROJECT_DIR/k8s/monitoring/inference-extension-dashboard.yaml"
 
 # Restart Grafana to load dashboards
 kubectl rollout restart deployment/kube-prometheus-stack-grafana -n monitoring
@@ -101,6 +103,8 @@ else
 fi
 echo ""
 echo "Login: admin / admin"
-echo "Dashboard: vLLM Performance Statistics (auto-loaded)"
+echo "Dashboards:"
+echo "  - vLLM Performance Statistics"
+echo "  - Inference Extension - EPP Metrics"
 echo ""
 echo "Next: ./scripts/03-install-ai-gateway.sh"
